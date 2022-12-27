@@ -1,6 +1,5 @@
 from data import Data
 import pandas as pd
-from math import sqrt
 
 DEBUG = False
 
@@ -44,23 +43,26 @@ def schedule_heuristic(data: Data, days = 1):
 
     for minute in timeline_minutes[1:]:
         print(f"{minute=}")
+        # Shift information, such as total operators and setup team capacity
         shift_info = data.shift_data.iloc[int(minute / 480)]
         total_operators = shift_info["Operators"]
         setup_teams = shift_info["Setup_teams"]
 
-        # Check operating machines
+        # Get operating machines and available machines
         operating_machines = parts_timeline.loc[minute, parts_timeline.iloc[minute].notnull()].index.to_list()
         available_machines = parts_timeline.loc[minute, parts_timeline.iloc[minute].isnull()].index.to_list()
 
-        # 
+        # Check if all the machines are running. If so, skip to the next minute
         if len(operating_machines) == unique_machines.shape[0]:
-            break
-
+            continue
+        
+        # Calculate how many operators are occupied based on the sum of operator
+        # requirements for all the currently running tasks
         occupied_operators = 0
-        for col, value in parts_timeline.iloc[minute].iteritems():
+        for _, value in parts_timeline.iloc[minute].iteritems():
             if value is None or value == "setup":
                 continue
-            occupied_operators += all_tasks.loc[(all_tasks["Machine"] == col) & (all_tasks["Part"] == value), "Nb_Operator"].iloc[0]
+            occupied_operators += all_tasks.loc[all_tasks["Part"] == value, "Nb_Operator"].iloc[0]
 
         available_operators = total_operators - occupied_operators
 
@@ -68,17 +70,20 @@ def schedule_heuristic(data: Data, days = 1):
         blocked_tasks_lst = []
         blocked_tasks = False
         while available_operators > 0 and not blocked_tasks:
-            # Check operating machines
-            available_machines = parts_timeline.loc[minute, parts_timeline.loc[minute].isnull()].index.to_list()
+            # Get operating machines and available machines
             operating_machines = parts_timeline.loc[minute, parts_timeline.loc[minute].notnull()].index.to_list()
+            available_machines = parts_timeline.loc[minute, parts_timeline.loc[minute].isnull()].index.to_list()
 
+            # Check if all the machines are running. If so, skip to the next minute
             if len(operating_machines) == unique_machines.shape[0]:
                 break
-
+            
+            # Get unscheduled tasks whose required machine is also available
+            # TODO: verify if the tool is also available maybe?
             unscheduled_tasks = all_tasks.loc[(all_tasks["scheduled"] == False) & all_tasks["Machine"].isin(available_machines), :].copy(deep=True)
             unscheduled_tasks = unscheduled_tasks.sort_values(by="Prod_time")
             
-            # Go to next minute if there are no more tasks to c
+            # Go to next minute if there are no more tasks to complete
             if unscheduled_tasks.empty:
                 break
 
