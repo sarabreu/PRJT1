@@ -8,8 +8,8 @@ from dataclasses import dataclass
 script_folder = os.path.dirname(os.path.realpath(__file__))
 working_folder = os.path.normpath(script_folder + os.sep + os.pardir)
 
-def data_file_path(name: str):
-    return os.path.join(working_folder,"data",name)
+def data_file_path(name: str, folder = "data"):
+    return os.path.join(working_folder,folder,name)
 # #########################################################
 
 
@@ -29,15 +29,34 @@ class Data:
     inst_data: pd.DataFrame
     setup_data: pd.DataFrame
 
+@dataclass
+class Timeline:
+    setup: pd.DataFrame
+    part: pd.DataFrame
+    tool: pd.DataFrame
+    schedule: pd.DataFrame
 
 def load(instance):
+    print("Loading Opt_Par")
     shift_data = get_instance(instance, 'Opt_Par')
+    print("Loading Init_data")
     initial_data = get_instance(instance,'Init_data')
+    print("Loading Inst_data")
     inst_data = get_instance(instance,'Inst_data')
+    print("Loading Setup_data")
     setup_data = get_instance(instance, 'Setup_data')
     return Data(shift_data, initial_data, inst_data, setup_data)
 
+def load_saved(name):
+    print(f"Loading {name}")
+    file_path = data_file_path(name, folder = "outputs")
+    return pd.read_excel(file_path)
 
-def save(timeline: pd.DataFrame, filename = "timeline.xlsx"):
-    filepath = data_file_path(filename)
+def save(timeline: pd.DataFrame, filename):
+    print(f"Saving {filename}")
+    filepath = data_file_path(filename, folder = "outputs")
     timeline.to_excel(filepath)
+
+def save_gantt(fig, filename):
+    filepath = data_file_path(filename, folder = "outputs")
+    fig.write_html(filepath)
