@@ -13,7 +13,7 @@ def data_file_path(name: str, folder = "data"):
 # #########################################################
 
 
-PREFIX = "PRJT1_2022-2023_Sched_instance_"
+PREFIX = "PRJT1_2022-2023_Sched5_instance_" # mudar quando quisermos 1 ou 5 dias
 SUFFIX = ".xlsx"
 
 def get_instance(number: int, sheet_name: str) -> pd.DataFrame:
