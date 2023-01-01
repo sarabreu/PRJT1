@@ -30,7 +30,9 @@ def schedule_heuristic(data: Data, days = 5):
     tool_timeline = pd.DataFrame(index=timeline_minutes, columns=unique_machines)
     tool_timeline[unique_machines] = None
 
-    timeline = Timeline(setup_timeline, part_timeline, tool_timeline, schedule_df)
+    packs_hour = pd.DataFrame(index=list(range(days*24)), columns=["Packs_hour"])
+    packs_hour["Packs_hour"] = 0
+    timeline = Timeline(setup_timeline, part_timeline, tool_timeline, schedule_df, packs_hour)
 
     # For the minute 0 we must check what machines were active
     # The machines with 0 production time finish at minute 0
@@ -57,8 +59,9 @@ def schedule_heuristic(data: Data, days = 5):
         timeline.schedule = pd.concat([timeline.schedule, schedule_row]).reset_index(drop=True)
         #all_tasks.loc[all_tasks["Part"] == part, "finish"] = minute + prodtime
         
-
-    for minute in timeline_minutes[1:]:
+    hour_counter = 0
+    minutes = iter(timeline_minutes[1:])
+    for minute in minutes:
         if (all_tasks["scheduled"] == True).all():
             break
 
@@ -74,6 +77,20 @@ def schedule_heuristic(data: Data, days = 5):
 
         # Check if all the machines are running. If so, skip to the next minute
         if len(operating_machines) == unique_machines.shape[0]:
+            continue
+        
+        # Check if the current production is higher than the maximum capacity
+        if minute > 1 and minute % 60 == 1:
+            hour_counter += 1
+
+        # Obter o máximo de produção horária segundo os dados do turno de produção
+        max_packs_hour = shift_info["Log_train(packs/hour)"]
+
+        if timeline.packs_hour.loc[hour_counter, "Packs_hour"] >= max_packs_hour:
+            print(f"Exceeded packs_hour capacity: {timeline.packs_hour.loc[hour_counter, 'Packs_hour']} / {max_packs_hour}")
+            # Isto faz saltar para a próxima hora
+            for _ in range(minute, hour_counter * 60 + 60):
+                next(minutes, None)
             continue
         
         # Calculate how many operators are occupied based on the sum of operator
@@ -113,18 +130,22 @@ def schedule_heuristic(data: Data, days = 5):
                 break
 
             for index, task in unscheduled_tasks.iterrows():
+                # print(current_packs_hour)
+                """CHECK ALL SCHEDULING RESTRICTIONS BEFORE ADDING TASK"""
+
                 if index in blocked_tasks_lst:
                     # Re-running a blocked task, should exit the outer loop or
                     # else it will continue indefinitely
                     blocked_tasks = True
                     continue
                 
-                # Check if the task is actually not scheduled yet
+                # Check if the task is already scheduled
                 is_scheduled = all_tasks.loc[(all_tasks["Part"] == task["Part"]) & (all_tasks["init"] == False), "scheduled"].iloc[0]
                 if is_scheduled == True:
                     blocked_tasks_lst.append(index)
                     continue
-
+                
+                # Check if the needed tool is not available
                 needed_tool = all_tasks.loc[(all_tasks["Part"] == task["Part"]) & (all_tasks["init"] == False), "Tool"].iloc[0]
                 used_tools = timeline.tool.loc[minute, [col for col in timeline.tool.columns if col != task["Machine"]]].values
                 if needed_tool in used_tools:
@@ -133,15 +154,14 @@ def schedule_heuristic(data: Data, days = 5):
 
                 debug_print(f"{task['Machine']} {task['Tool']} {task['Part']}")
 
-                # Check if the selected task requires less operators than the
+                # Check if the selected task requires more operators than the
                 # ones currently available
                 if task["Nb_Operator"] > available_operators:
                     debug_print("\t Operators not available")
                     blocked_tasks_lst.append(index)
                     continue
-                
-                # Checking for setup
 
+                # Checking for setup
                 # Get last tool
                 previous_tool = timeline.tool.loc[minute-1, task["Machine"]]
                 setup_time = 0
@@ -180,6 +200,16 @@ def schedule_heuristic(data: Data, days = 5):
                         debug_print("\t Index out of bounds")
                         break
                     finish = worktime_minutes - 1
+
+                # Check if allocating the task surpasses packs/hour capacity
+                # print(f"{current_packs_hour} + {task['Packs_hour']} >= {max_packs_hour}")
+                max_packs_on_finishing_shift = data.shift_data.iloc[int(finish % 1440 / 480)]["Log_train(packs/hour)"]
+                packs_hour_on_finish = timeline.packs_hour.loc[hour_counter + int((finish - minute)/60), "Packs_hour"]
+                if packs_hour_on_finish + task["Packs_hour"] >= max_packs_on_finishing_shift:
+                    blocked_tasks_lst.append(index)
+                    continue
+                
+                """TASK PASSED ALL RESTRICTIONS, HAS APPROVAL TO BE SCHEDULED"""
                 
                 debug_print("\t Adding task")
 
@@ -227,6 +257,9 @@ def schedule_heuristic(data: Data, days = 5):
 
                 # Reduce operator availability
                 available_operators -= task["Nb_Operator"]
+
+                # Increase current packs per hour
+                timeline.packs_hour.loc[hour_counter + int((finish - minute)/60), "Packs_hour"] +=  task["Packs_hour"]
 
                 # Mark the current task as already scheduled
                 all_tasks.loc[(all_tasks["Part"] == task["Part"]) & (all_tasks["init"] == False), "scheduled"] = True

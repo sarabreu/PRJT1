@@ -22,6 +22,7 @@ def save_all(timeline, all_tasks, instance):
     save(timeline.tool, f"tool_timeline_{instance}.xlsx")
     save(timeline.setup, f"setup_timeline_{instance}.xlsx")
     save(timeline.schedule, f"schedule_{instance}.xlsx")
+    save(timeline.packs_hour, f"packs_hour_{instance}.xlsx")
     save(all_tasks, f"all_tasks_{instance}.xlsx")
 
 def main():

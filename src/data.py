@@ -12,8 +12,8 @@ def data_file_path(name: str, folder = "data"):
     return os.path.join(working_folder,folder,name)
 # #########################################################
 
-
-PREFIX = "PRJT1_2022-2023_Sched5_instance_" # mudar quando quisermos 1 ou 5 dias
+from configuration import settings, DayRange
+PREFIX = "PRJT1_2022-2023_Sched5_instance_" if settings.day_range == DayRange.FIVE else "PRJT1_2022-2023_Sched_instance_"
 SUFFIX = ".xlsx"
 
 def get_instance(number: int, sheet_name: str) -> pd.DataFrame:
@@ -35,6 +35,7 @@ class Timeline:
     part: pd.DataFrame
     tool: pd.DataFrame
     schedule: pd.DataFrame
+    packs_hour: pd.DataFrame
 
 def load(instance):
     print("Loading Opt_Par")
