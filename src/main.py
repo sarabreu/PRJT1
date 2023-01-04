@@ -2,7 +2,7 @@ import pandas as pd
 from copy import deepcopy
 
 from data import load, Data, save, load_saved
-from heuristic import schedule_heuristic
+from heuristicSST import schedule_heuristic
 from diagram import display_gantt
 from configuration import settings
 

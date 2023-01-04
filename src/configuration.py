@@ -10,8 +10,8 @@ dtn_zeroed = datetime(dtn.year, dtn.month, dtn.day)
 
 class Settings:
     instance = [2]
-    day_range = DayRange.FIVE # mudar quando quisermos 1 ou 5 dias
-    days = 5
+    day_range = DayRange.ONE # mudar quando quisermos 1 ou 5 dias
+    days = 1 # mudar quando quisermos 1 ou 5 dias
     run_heuristic = True # False to only draw the Gantt diagram
     allow_unfinished_tasks = True
     debug_prints = False
