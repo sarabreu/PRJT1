@@ -14,7 +14,9 @@ def preprocessing(raw_data: Data):
     return data
 
 def display(instance):
-    schedule = load_saved(f"schedule_{instance}.xlsx")
+    sorted_setup = "_sorted_setup" if settings.sort_setup else ""
+    suffix = str(instance) + sorted_setup
+    schedule = load_saved(f"schedule_{suffix}.xlsx")
     display_gantt(schedule, None)
 
 def save_all(timeline, all_tasks, instance):
