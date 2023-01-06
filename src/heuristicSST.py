@@ -8,6 +8,34 @@ def debug_print(*args, **kwargs):
     if settings.debug_prints:
         print(*args, **kwargs)
 
+def sort_setup(unique_machines, all_tasks, timeline: Timeline, minute, data, unscheduled_tasks: pd.DataFrame):
+    # criar dataframe com as máquinas únicas como linas e as peças que estão por produzir como colunas
+    
+    setup_df = pd.DataFrame(index = unique_machines, columns=unscheduled_tasks["Part"])
+    
+    #ir buscar o molde que está a ser usado neste minuto em cada máquina 
+    current_tool = pd.DataFrame()
+    for machine in unique_machines:
+        previous_tool = timeline.tool.loc[minute-1, machine]
+        
+        # If the tool in the previous minute is None go back in time
+        # until we get the last tool
+        idx = 1
+        while previous_tool is None and minute-idx >= 0:
+            previous_tool = timeline.tool.loc[minute-idx, machine]
+            idx = idx + 1
+    
+        #ver quais sao os moldes usados por cada peça que ainda falta escalonar
+        for index, task in unscheduled_tasks.iterrows():
+            if task["Machine"] == machine:
+                setup_time = data.setup_data.loc[previous_tool, task["Tool"]]
+                setup_df.loc[machine, task["Part"]] = setup_time
+
+    print(setup_df)
+    exit()
+    return setup_df
+
+
 def schedule_heuristic(data: Data, days = 5):
     start_time = settings.start_time
 
@@ -120,10 +148,14 @@ def schedule_heuristic(data: Data, days = 5):
             unscheduled_tasks = unscheduled_tasks.sort_values(by="Prod_time")
             unscheduled_tasks = unscheduled_tasks.reset_index(drop=True)
 
+            """SHORTEST SETUP TIME"""
+
             # Get a table with index being the machines currently producing a part
             # and columns being unscheduled tasks (the part name)
-            index = unscheduled_tasks.index
-            next_setup_times = ...
+            # index = unscheduled_tasks.index
+            # next_setup_times = ...
+
+            setupi = sort_setup(unique_machines, all_tasks, timeline, minute, data, unscheduled_tasks)
 
             # Use bubble sort to change the order
 
