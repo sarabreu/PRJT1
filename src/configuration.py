@@ -14,6 +14,7 @@ class Settings:
     days = 1 # mudar quando quisermos 1 ou 5 dias
     run_heuristic = True # False to only draw the Gantt diagram
     allow_unfinished_tasks = True
+    sort_setup = True
     debug_prints = False
     start_time = dtn_zeroed
 

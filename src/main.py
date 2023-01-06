@@ -2,7 +2,7 @@ import pandas as pd
 from copy import deepcopy
 
 from data import load, Data, save, load_saved
-from heuristicSST import schedule_heuristic
+from heuristic import schedule_heuristic
 from diagram import display_gantt
 from configuration import settings
 
@@ -18,12 +18,14 @@ def display(instance):
     display_gantt(schedule, None)
 
 def save_all(timeline, all_tasks, instance):
-    save(timeline.part, f"part_timeline_{instance}.xlsx")
-    save(timeline.tool, f"tool_timeline_{instance}.xlsx")
-    save(timeline.setup, f"setup_timeline_{instance}.xlsx")
-    save(timeline.schedule, f"schedule_{instance}.xlsx")
-    save(timeline.packs_hour, f"packs_hour_{instance}.xlsx")
-    save(all_tasks, f"all_tasks_{instance}.xlsx")
+    sorted_setup = "_sorted_setup" if settings.sort_setup else ""
+    suffix = str(instance) + sorted_setup
+    save(timeline.part, f"part_timeline_{suffix}.xlsx")
+    save(timeline.tool, f"tool_timeline_{suffix}.xlsx")
+    save(timeline.setup, f"setup_timeline_{suffix}.xlsx")
+    save(timeline.schedule, f"schedule_{suffix}.xlsx")
+    save(timeline.packs_hour, f"packs_hour_{suffix}.xlsx")
+    save(all_tasks, f"all_tasks_{suffix}.xlsx")
 
 def main():
     instances = settings.instance
