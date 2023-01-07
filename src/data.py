@@ -38,13 +38,13 @@ class Timeline:
     packs_hour: pd.DataFrame
 
 def load(instance):
-    print("Loading Opt_Par")
+    print(f"Loading Opt_Par for Instance {instance}")
     shift_data = get_instance(instance, 'Opt_Par')
-    print("Loading Init_data")
+    print(f"Loading Init_data for Instance {instance}")
     initial_data = get_instance(instance,'Init_data')
-    print("Loading Inst_data")
+    print(f"Loading Inst_data for Instance {instance}")
     inst_data = get_instance(instance,'Inst_data')
-    print("Loading Setup_data")
+    print(f"Loading Setup_data for Instance {instance}")
     setup_data = get_instance(instance, 'Setup_data')
     return Data(shift_data, initial_data, inst_data, setup_data)
 
@@ -54,7 +54,7 @@ def load_saved(name):
     return pd.read_excel(file_path)
 
 def save(timeline: pd.DataFrame, filename):
-    print(f"Saving {filename}")
+    # print(f"Saving {filename}")
     filepath = data_file_path(filename, folder = "outputs")
     timeline.to_excel(filepath)
 

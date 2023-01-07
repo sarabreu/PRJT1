@@ -1,3 +1,6 @@
+import os
+
+from tqdm import tqdm, trange
 from data import Data, Timeline
 import pandas as pd
 from datetime import timedelta
@@ -42,19 +45,17 @@ def sort_by_setup(unique_machines, timeline: Timeline, minute, data, unscheduled
         parts_with_setup = parts_with_setup.sort_values()
         parts_with_setup = list(parts_with_setup.index)
 
-        for part,next_part in zip(parts_with_setup, parts_with_setup[1:]):
-            index_of_left = unscheduled_tasks_cpy[unscheduled_tasks_cpy["Part"] == part].index
-            index_of_right = unscheduled_tasks_cpy[unscheduled_tasks_cpy["Part"] == next_part].index
-            if index_of_left > index_of_right:
-                temp_left = unscheduled_tasks_cpy.iloc[index_of_left].copy(deep=True)
-                unscheduled_tasks_cpy.iloc[index_of_left] = unscheduled_tasks_cpy.iloc[index_of_right].copy(deep=True)
-                unscheduled_tasks_cpy.iloc[index_of_right] = temp_left
+        correspondence = {part: order for order, part in enumerate(parts_with_setup)}
+        unscheduled_tasks_cpy = unscheduled_tasks_cpy.sort_values(
+            by="Part",
+            key=lambda column: column.map(correspondence)
+        )
 
     return unscheduled_tasks_cpy
 
 
 
-def schedule_heuristic(data: Data, days = 5):
+def schedule_heuristic(data: Data, inst, days = 5):
     start_time = settings.start_time
 
     worktime_minutes = days * 24 * 60
@@ -107,12 +108,12 @@ def schedule_heuristic(data: Data, days = 5):
         #all_tasks.loc[all_tasks["Part"] == part, "finish"] = minute + prodtime
 
     #hour_counter = 0
-    minutes = iter(timeline_minutes[1:])
-    for minute in minutes:
+    minutes = list(timeline_minutes[1:])
+    for minute in tqdm(minutes, desc=f"Instance {inst}", position=inst-1, leave=False):
         if (all_tasks["scheduled"] == True).all():
             break
 
-        print(f"{minute=}")
+        # print(f"{inst} {minute=}")
         # Shift information, such as total operators and setup team capacity
         shift_info = data.shift_data.iloc[int(minute % 1440 / 480)]
         total_operators = shift_info["Operators"]

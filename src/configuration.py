@@ -9,13 +9,19 @@ dtn = datetime.now()
 dtn_zeroed = datetime(dtn.year, dtn.month, dtn.day)
 
 class Settings:
-    instance = [2]
-    day_range = DayRange.ONE # mudar quando quisermos 1 ou 5 dias
-    days = 1 # mudar quando quisermos 1 ou 5 dias
+    # Simulated scenario settings
+    instance = [1,2,3,4]
+    day_range = DayRange.FIVE # File type, change for either one day or five day files
+    days = 5 # Simulated time
+
+    # Heuristic settings
     run_heuristic = True # False to only draw the Gantt diagram
     allow_unfinished_tasks = True
     sort_setup = True
-    debug_prints = False
     start_time = dtn_zeroed
+
+    # Program settings
+    debug_prints = False
+    run_parallelized = True
 
 settings = Settings()

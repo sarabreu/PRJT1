@@ -39,9 +39,8 @@ def display_gantt(schedule, instance: Optional[int]):
     colors["Setup"] = "#FFFFFF"
 
     fig = ff.create_gantt(schedule, colors=colors, index_col='Resource', show_colorbar=True,
-                        group_tasks=True, title=f'Gantt Chart {instance}')
-
-    if instance is not None:
-        save_gantt(fig, f"gantt_{instance}.html")
+                        group_tasks=True, title=f'Gantt Chart for Instance {instance}')
 
     fig.show()
+
+    return fig
