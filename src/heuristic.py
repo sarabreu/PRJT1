@@ -1,6 +1,6 @@
 import os
 
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from data import Data, Timeline
 import pandas as pd
 from datetime import timedelta
