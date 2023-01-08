@@ -14,12 +14,12 @@ def debug_print(*args, **kwargs):
 
 def sort_by_setup(unique_machines, timeline: Timeline, minute, data, unscheduled_tasks: pd.DataFrame):
     
-    # criar dataframe com as máquinas únicas como linas e as peças que estão por produzir como colunas
+    # Dataframe with machines as lines and unscheduled tasks as columns
     setup_df = pd.DataFrame(index = unique_machines, columns=unscheduled_tasks["Part"])
     
     unscheduled_tasks_cpy = unscheduled_tasks.copy(deep=True)
 
-    #ir buscar o molde que está a ser usado neste minuto em cada máquina
+    #Look for the previous tool used in each machine
     for machine in unique_machines:
         previous_tool = timeline.tool.loc[minute-1, machine]
         
@@ -30,7 +30,7 @@ def sort_by_setup(unique_machines, timeline: Timeline, minute, data, unscheduled
             previous_tool = timeline.tool.loc[minute-idx, machine]
             idx = idx + 1
     
-        #ver quais sao os moldes usados por cada peça que ainda falta escalonar
+        #Tools used for each unscheduled task
         for _, task in unscheduled_tasks.iterrows():
             if task["Machine"] == machine:
                 setup_time = data.setup_data.loc[previous_tool, task["Tool"]]
@@ -105,15 +105,12 @@ def schedule_heuristic(data: Data, inst, days = 5):
             }
         )
         timeline.schedule = pd.concat([timeline.schedule, schedule_row]).reset_index(drop=True)
-        #all_tasks.loc[all_tasks["Part"] == part, "finish"] = minute + prodtime
-
-    #hour_counter = 0
+       
     minutes = list(timeline_minutes[1:])
     for minute in tqdm(minutes, desc=f"Instance {inst}", position=inst-1, leave=False):
         if (all_tasks["scheduled"] == True).all():
             break
 
-        # print(f"{inst} {minute=}")
         # Shift information, such as total operators and setup team capacity
         shift_info = data.shift_data.iloc[int(minute % 1440 / 480)]
         total_operators = shift_info["Operators"]
@@ -127,7 +124,7 @@ def schedule_heuristic(data: Data, inst, days = 5):
         if len(operating_machines) == unique_machines.shape[0]:
             continue
 
-        # Obter o máximo de produção horária segundo os dados do turno de produção
+        # Get maximum production rate
         max_packs_hour = shift_info["Log_train(packs/hour)"]
 
         if timeline.packs_hour.loc[minute, "Packs_hour"] >= max_packs_hour:
@@ -173,15 +170,6 @@ def schedule_heuristic(data: Data, inst, days = 5):
                 break
 
             """SHORTEST SETUP TIME"""
-
-            """""""""""
-            # Get a table with index being the machines currently producing a part
-            # and columns being unscheduled tasks (the part name)
-
-            
-
-            # Use bubble sort to change the order
-           """""
             if settings.sort_setup:
                 unscheduled_tasks = sort_by_setup(unique_machines, timeline, minute, data, unscheduled_tasks)
 

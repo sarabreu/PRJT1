@@ -24,8 +24,7 @@ def display(instance):
     suffix = str(instance) + sorted_setup + days_file
     schedule = load_saved(f"schedule_{suffix}.xlsx")
     fig = display_gantt(schedule, instance)
-    if not settings.run_heuristic:
-        save_gantt(fig, f"gantt_{suffix}.html")
+    save_gantt(fig, f"gantt_{suffix}.html")
 
 def save_all(timeline, all_tasks, instance):
     sorted_setup = "_sorted_setup" if settings.sort_setup else "_spt"
