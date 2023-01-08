@@ -107,7 +107,12 @@ def schedule_heuristic(data: Data, inst, days = 5):
         timeline.schedule = pd.concat([timeline.schedule, schedule_row]).reset_index(drop=True)
        
     minutes = list(timeline_minutes[1:])
-    for minute in tqdm(minutes, desc=f"Instance {inst}", position=inst-1, leave=False):
+    iterator = minutes
+    # allows disabling progressbar
+    if settings.progressbar:
+        iterator = tqdm(minutes, desc=f"Instance {inst}", position=inst-1, leave=False)
+
+    for minute in iterator:
         if (all_tasks["scheduled"] == True).all():
             break
 
@@ -229,22 +234,25 @@ def schedule_heuristic(data: Data, inst, days = 5):
                 if setup_time > 0:
                     # If for the forseable setup timeline we dont have team
                     # capacity to setup for the current task, continue
-                    if any([teams == setup_teams for teams in timeline.setup[minute: minute+setup_time]]):
+                    if any([teams == setup_teams for teams in timeline.setup[minute: minute+setup_time-1]]):
                         blocked_tasks_lst.append(index)
                         continue
                     # Increment the setup timeline given that a team will be
                     # dedicated to setup for this task 
-                    timeline.setup[minute : minute+setup_time] = [x + 1 for x in timeline.setup[minute : minute+setup_time]]
+                    timeline.setup[minute : minute+setup_time-1] = [x + 1 for x in timeline.setup[minute : minute+setup_time-1]]
+                
+                # Check if setup time exceeds our timeline window
+                if minute+setup_time-1 >= worktime_minutes:
+                    blocked_tasks_lst.append(index)
+                    continue
                     
-                    
-                # Check if the setup time + task execution time doesn't exceed
-                # our timeline window
+                # Check if the setup time + task execution time exceeds our timeline window
                 finish = minute+setup_time+task["Prod_time"]-1
                 if finish >= worktime_minutes:
                     if not settings.allow_unfinished_tasks:
                         blocked_tasks_lst.append(index)
                         debug_print("\t Index out of bounds")
-                        break
+                        continue
                     finish = worktime_minutes - 1
 
                 # Check if allocating the task surpasses packs/hour capacity
