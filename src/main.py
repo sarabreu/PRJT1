@@ -9,7 +9,7 @@ import multiprocessing
 import time
 from multiprocessing import freeze_support, Lock
 
-from data import save_gantt, load, Data, save, load_saved
+from data import save_gantt, load, Data, save, load_saved, Timeline
 
 def preprocessing(raw_data: Data):
     data = deepcopy(raw_data)
@@ -26,15 +26,11 @@ def display(instance):
     fig = display_gantt(schedule, instance)
     save_gantt(fig, f"gantt_{suffix}.html")
 
-def save_all(timeline, all_tasks, instance):
+def save_all(timeline: Timeline, all_tasks, instance):
     sorted_setup = "_sorted_setup" if settings.sort_setup else "_spt"
     days_file = "_5_days" if settings.day_range == DayRange.FIVE else "_1_day"
     suffix = str(instance) + sorted_setup + days_file
-    save(timeline.part, f"part_timeline_{suffix}.xlsx")
-    save(timeline.tool, f"tool_timeline_{suffix}.xlsx")
-    save(timeline.setup, f"setup_timeline_{suffix}.xlsx")
-    save(timeline.schedule, f"schedule_{suffix}.xlsx")
-    save(timeline.packs_hour, f"packs_hour_{suffix}.xlsx")
+    timeline.save(suffix)
     save(all_tasks, f"all_tasks_{suffix}.xlsx")
 
 def run_once(inst):
@@ -68,6 +64,9 @@ def main():
     end_time = time.time()
     
     print(f"\nThe program took {end_time-start_time:.2f} seconds to run.")
+
+    if not settings.run_heuristic:
+        return
     time.sleep(1)
     print("\nDisplaying Gantt charts in 3...")
     time.sleep(1)

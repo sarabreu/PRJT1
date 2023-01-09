@@ -49,7 +49,7 @@ def sort_by_setup(unique_machines, timeline: Timeline, minute, data, unscheduled
         unscheduled_tasks_cpy = unscheduled_tasks_cpy.sort_values(
             by="Part",
             key=lambda column: column.map(correspondence)
-        )
+        ).reset_index(drop=True)
 
     return unscheduled_tasks_cpy
 
@@ -80,7 +80,9 @@ def schedule_heuristic(data: Data, inst, days = 5):
 
     packs_hour = pd.DataFrame(index=list(range(worktime_minutes)), columns=["Packs_hour"])
     packs_hour["Packs_hour"] = 0
-    timeline = Timeline(setup_timeline, part_timeline, tool_timeline, schedule_df, packs_hour)
+
+    working_operators_hour = pd.DataFrame(index=list(range(worktime_minutes)), columns=["Operators_working"])
+    timeline = Timeline(setup_timeline, part_timeline, tool_timeline, schedule_df, packs_hour, working_operators_hour)
 
     # For the minute 0 we must check what machines were active
     # The machines with 0 production time finish at minute 0
@@ -113,6 +115,7 @@ def schedule_heuristic(data: Data, inst, days = 5):
         iterator = tqdm(minutes, desc=f"Instance {inst}", position=inst-1, leave=False)
 
     for minute in iterator:
+
         if (all_tasks["scheduled"] == True).all():
             break
 
@@ -179,7 +182,6 @@ def schedule_heuristic(data: Data, inst, days = 5):
                 unscheduled_tasks = sort_by_setup(unique_machines, timeline, minute, data, unscheduled_tasks)
 
             for index, task in unscheduled_tasks.iterrows():
-                # print(current_packs_hour)
                 """CHECK ALL SCHEDULING RESTRICTIONS BEFORE ADDING TASK"""
 
                 if index in blocked_tasks_lst:
@@ -191,6 +193,11 @@ def schedule_heuristic(data: Data, inst, days = 5):
                 # Check if the task is already scheduled
                 is_scheduled = all_tasks.loc[(all_tasks["Part"] == task["Part"]) & (all_tasks["init"] == False), "scheduled"].iloc[0]
                 if is_scheduled == True:
+                    blocked_tasks_lst.append(index)
+                    continue
+                
+                # Check if machine is still available
+                if timeline.part.loc[minute, task["Machine"]] is not None:
                     blocked_tasks_lst.append(index)
                     continue
                 
@@ -213,7 +220,6 @@ def schedule_heuristic(data: Data, inst, days = 5):
                 # Checking for setup
                 # Get last tool
                 previous_tool = timeline.tool.loc[minute-1, task["Machine"]]
-                setup_time = 0
 
                 # If for some reason the previous tool is setup, stop
                 if previous_tool == "setup":
@@ -310,6 +316,7 @@ def schedule_heuristic(data: Data, inst, days = 5):
 
                 # Reduce operator availability
                 available_operators -= task["Nb_Operator"]
+                timeline.working_operators_hour.loc[minute+setup_time:finish] = total_operators-available_operators
 
                 # Increase current packs per hour
                 timeline.packs_hour.loc[minute+setup_time:finish, "Packs_hour"] +=  math.floor(task["Packs_hour"])

@@ -36,6 +36,15 @@ class Timeline:
     tool: pd.DataFrame
     schedule: pd.DataFrame
     packs_hour: pd.DataFrame
+    working_operators_hour: pd.DataFrame
+
+    def save(self, suffix):
+        save(self.schedule, f"schedule_{suffix}.xlsx")
+        save(self.part, f"part_timeline_{suffix}.xlsx")
+        save(self.tool, f"tool_timeline_{suffix}.xlsx")
+        save(self.setup, f"setup_timeline_{suffix}.xlsx")
+        save(self.packs_hour, f"packs_hour_{suffix}.xlsx")
+        save(self.working_operators_hour, f"working_operators_{suffix}.xlsx") 
 
 def load(instance):
     print(f"Loading Opt_Par for Instance {instance}")
