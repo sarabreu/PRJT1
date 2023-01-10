@@ -10,9 +10,9 @@ dtn_zeroed = datetime(dtn.year, dtn.month, dtn.day)
 
 class Settings:
     # Simulated scenario settings
-    instance = [3]
-    day_range = DayRange.ONE # File type, change for either one day or five day files
-    days = 1 # Simulated time
+    instance = [1,2,3,4]
+    day_range = DayRange.FIVE # File type, change for either one day or five day files
+    days = 5 # Simulated time
 
     # Heuristic settings
     run_heuristic = True # False to only draw the Gantt diagram

@@ -55,33 +55,45 @@ def sort_by_setup(unique_machines, timeline: Timeline, minute, data, unscheduled
 
 
 
-def schedule_heuristic(data: Data, inst, days = 5):
+def schedule_heuristic(data: Data, inst, days):
+    # Time where we will start schedulling tasks
     start_time = settings.start_time
 
+    # Time window to consider
     worktime_minutes = days * 24 * 60
     timeline_minutes = list(range(worktime_minutes))
     setup_timeline = pd.Series([0]*worktime_minutes)
+
+    # Have a column for the machine working, the start and the finish time and the 
+    # part being produced + tool being used
     schedule_df = pd.DataFrame(columns=["Task", "Start", "Finish", "Resource"])
 
+    # Have a datafrane with all the tasks 
     data.initial_data["init"] = True
     data.inst_data["init"] = False
     all_tasks = pd.concat([data.initial_data, data.inst_data], ignore_index=True)
     all_tasks["scheduled"] = False
 
+    # Have a list with all the unique identifiers of each machine
     unique_machines = all_tasks["Machine"].unique()
 
     # Have a column for each machine, in each row there shall be the current
-    # tool being used, or None
+    # part being produced, or None
     part_timeline = pd.DataFrame(index=timeline_minutes, columns=unique_machines)
     part_timeline[unique_machines] = None
 
+    # Have a column for each machine, in each row there shall be the current
+    # tool being used, or None
     tool_timeline = pd.DataFrame(index=timeline_minutes, columns=unique_machines)
     tool_timeline[unique_machines] = None
 
+    # Have a column for the number of parts being produced and a minute per row
     packs_hour = pd.DataFrame(index=list(range(worktime_minutes)), columns=["Packs_hour"])
     packs_hour["Packs_hour"] = 0
 
+    # Have a column for the number of operators working and a minute per row
     working_operators_hour = pd.DataFrame(index=list(range(worktime_minutes)), columns=["Operators_working"])
+    
     timeline = Timeline(setup_timeline, part_timeline, tool_timeline, schedule_df, packs_hour, working_operators_hour)
 
     # For the minute 0 we must check what machines were active
